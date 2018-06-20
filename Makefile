@@ -23,38 +23,40 @@
 
 # C compiler icc, gcc, etc if other than system default
 # CC = cc
+CC = arm-epoc-pe-gcc -Znoemx
 
 # C++ compiler icpc, g++, etc if other than system default
 # CXX = c++
+CXX = arm-epoc-pe-gcc -Znoemx
 
 # sometimes only -fpic works
-FPIC = -fPIC
+# FPIC = -fPIC # but not in epoc32-pe
 
 # Warning level flags
 WARN = -Wall
 
 # robust optimazation level
-OPTIM = -O2
+OPTIM = -O2 -fomit-frame-pointer
 
 # debug flags, use -g for debug symbols
 DEBUG =
 
 # location of Lua install on this system
-LUA_HOME ?= $(PWD)/lua
+$(eval LUA_INC ?= $(PWD)/../..)
 
 # where to install lunum library and include
 INSTALL_TOP = $(PWD)
 
 # C Flags
-CFLAGS = $(WARN) $(OPTIM) $(DEBUG) $(FPIC)
+CFLAGS = $(WARN) $(OPTIM) $(DEBUG) $(FPIC) -DLUNUM_API_NOCOMPLEX
 
 
 # Configuration for common platforms. If you need to use a different linker,
 # archiver, or C libraries then uncomment the UNAME = Custom line below, and
 # edit the custom first block following.
 # ------------------------------------------------------------------------------
-UNAME = $(shell uname)
-#UNAME = Custom
+#UNAME = $(shell uname)
+UNAME = EPOC32
 # ------------------------------------------------------------------------------
 #
 #
@@ -79,6 +81,12 @@ AR     = ar rcu
 CLIBS  =
 endif
 
+ifeq ($(UNAME), EPOC32)
+SO     = $(CC) -shared \
+	 -L../../.. -uid2 0x4c756121 -uid3  "0x10`echo lunum | md5sum | cut -c1-6`"
+CLIBS  = -llua53 -lestlib
+DLLTOOL= arm-epoc-pe-dlltool
+endif
 
 
 # -------------------------------------------------
@@ -87,22 +95,20 @@ endif
 export CC
 export CXX
 export CFLAGS
-export LUA_HOME
+export LUA_INC
 export SO
 export AR
 export CLIBS
+export DLLTOOL
 # -------------------------------------------------
 
 
 BUILD_TOP   = $(shell pwd)
-LIB_SO      = lunum.so
-LIB_A       = liblunum.a
+LIB_SO      = lunum.dll
 
 export LUNUM_SO = $(BUILD_TOP)/src/$(LIB_SO)
-export LUNUM_A  = $(BUILD_TOP)/src/$(LIB_A)
 
 INSTALL_SO  = $(INSTALL_TOP)/lib/$(LIB_SO)
-INSTALL_A   = $(INSTALL_TOP)/lib/$(LIB_A)
 
 H1 = lunum.h
 H2 = numarray.h
@@ -112,7 +118,7 @@ HEADERS = \
 	$(INSTALL_TOP)/include/$(H2)
 
 
-default : $(LUNUM_SO) $(LUNUM_A)
+default : $(LUNUM_SO)
 
 config : 
 	@echo "CC           = $(CC)"
@@ -123,14 +129,14 @@ config :
 	@echo "DEBUG        = $(DEBUG)"
 	@echo "AR           = $(AR)"
 	@echo "SO           = $(SO)"
-	@echo "LUA_HOME     = $(LUA_HOME)"
+	@echo "LUA_INC      = $(LUA_INC)"
 	@echo "INSTALL_TOP  = $(INSTALL_TOP)"
 
-test : $(LUNUM_SO) $(LUNUM_A)
+test : $(LUNUM_SO)
 
 all : default test
 
-install : $(INSTALL_SO) $(INSTALL_A) $(HEADERS)
+install : $(INSTALL_SO) $(HEADERS)
 
 $(INSTALL_TOP)/include/$(H1) : 
 	mkdir -p $(INSTALL_TOP)/include
@@ -143,19 +149,12 @@ $(INSTALL_TOP)/include/$(H2) :
 $(LUNUM_SO) : FORCE
 	@make -C src $(LUNUM_SO)
 
-$(LUNUM_A) : FORCE
-	@make -C src $(LUNUM_A)
-
 test : FORCE
 	@make -C test
 
 $(INSTALL_SO) : $(LUNUM_SO)
 	mkdir -p $(INSTALL_TOP)/lib
 	cp $(LUNUM_SO) $(INSTALL_TOP)/lib
-
-$(INSTALL_A) : $(LUNUM_A)
-	mkdir -p $(INSTALL_TOP)/lib
-	cp $(LUNUM_A) $(INSTALL_TOP)/lib
 
 clean :
 	make -C test clean

@@ -53,9 +53,10 @@ void lunum_astable(lua_State *L, int pos)
 {
   struct Array *A = lunum_checkarray1(L, pos);
   const void *a = A->data;
+  int i;
 
   lua_newtable(L);
-  for (int i=0; i<A->size; ++i) {
+  for (i=0; i<A->size; ++i) {
 
     lua_pushnumber(L, i+1);
 
@@ -67,27 +68,11 @@ void lunum_astable(lua_State *L, int pos)
     case ARRAY_TYPE_LONG    : lua_pushnumber   (L, ((long    *)a)[i]); break;
     case ARRAY_TYPE_FLOAT   : lua_pushnumber   (L, ((float   *)a)[i]); break;
     case ARRAY_TYPE_DOUBLE  : lua_pushnumber   (L, ((double  *)a)[i]); break;
-    case ARRAY_TYPE_COMPLEX : lunum_pushcomplex(L, ((Complex *)a)[i]); break;
     }
 
     lua_settable(L, -3);
   }
 }
-
-void lunum_pushcomplex(lua_State *L, Complex z)
-{
-  Complex *w = (Complex*) lua_newuserdata(L, sizeof(Complex));
-  luaL_getmetatable(L, "complex");
-  lua_setmetatable(L, -2);
-  *w = z;
-}
-
-Complex lunum_checkcomplex(lua_State *L, int n)
-{
-  Complex *w = (Complex*) luaL_checkudata(L, n, "complex");
-  return *w;
-}
-
 
 
 int lunum_upcast(lua_State *L, int pos, enum ArrayType T, int N)
@@ -127,8 +112,9 @@ int lunum_upcast(lua_State *L, int pos, enum ArrayType T, int N)
   else if (lua_istable(L, pos)) {
 
     struct Array A = array_new_zeros(lua_rawlen(L, pos), T);
+    int i;
 
-    for (int i=0; i<A.size; ++i) {
+    for (i=0; i<A.size; ++i) {
 
       lua_pushnumber(L, i+1);
       lua_gettable(L, pos);
@@ -166,17 +152,6 @@ int lunum_upcast(lua_State *L, int pos, enum ArrayType T, int N)
     return 1;
   }
 
-  // Deal with lunum.complex
-  // ---------------------------------------------------------------------------
-  else if (lunum_hasmetatable(L, pos, "complex")) {
-
-    const Complex z = *((Complex*) lua_touserdata(L, pos));
-    struct Array A = array_new_zeros(N, ARRAY_TYPE_COMPLEX);
-    array_assign_from_scalar(&A, &z);
-    lunum_pusharray1(L, &A);
-    return 1;
-  }
-
   // Throw an error
   // ---------------------------------------------------------------------------
   else {
@@ -200,16 +175,13 @@ int lunum_hasmetatable(lua_State *L, int pos, const char *name)
 
 void *lunum_tovalue(lua_State *L, enum ArrayType T)
 {
-  Complex x=0.0;
+  double x = 0.0;
 
   if (lua_isnumber(L, -1)) {
     x = lua_tonumber(L, -1);
   }
   else if (lua_isboolean(L, -1)) {
     x = lua_toboolean(L, -1);
-  }
-  else if (lunum_hasmetatable(L, -1, "complex")) {
-    x = *((Complex*) lua_touserdata(L, -1));
   }
   else {
     luaL_error(L, "unkown data type");
@@ -225,7 +197,6 @@ void *lunum_tovalue(lua_State *L, enum ArrayType T)
   case ARRAY_TYPE_LONG    : *((long   *)y) = x; break;
   case ARRAY_TYPE_FLOAT   : *((float  *)y) = x; break;
   case ARRAY_TYPE_DOUBLE  : *((double *)y) = x; break;
-  case ARRAY_TYPE_COMPLEX : *((Complex*)y) = x; break;
   }
 
   return y;

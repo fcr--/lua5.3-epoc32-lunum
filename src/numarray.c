@@ -3,22 +3,20 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include <complex.h>
 #include "numarray.h"
 
 typedef unsigned char Bool;
-typedef double complex Complex;
 
-#define EXPR_ADD(T) {for(int i=0;i<N;++i)((T*)c)[i]=((T*)a)[i]+((T*)b)[i];}
-#define EXPR_SUB(T) {for(int i=0;i<N;++i)((T*)c)[i]=((T*)a)[i]-((T*)b)[i];}
-#define EXPR_MUL(T) {for(int i=0;i<N;++i)((T*)c)[i]=((T*)a)[i]*((T*)b)[i];}
-#define EXPR_DIV(T) {for(int i=0;i<N;++i)((T*)c)[i]=((T*)a)[i]/((T*)b)[i];}
-#define EXPR_POW(T) {for(int i=0;i<N;++i)((T*)c)[i]= pow(((T*)a)[i],((T*)b)[i]);}
-#define EXPR_COW(T) {for(int i=0;i<N;++i)((T*)c)[i]=cpow(((T*)a)[i],((T*)b)[i]);}
+#define EXPR_ADD(T) {int i; for(i=0;i<N;++i)((T*)c)[i]=((T*)a)[i]+((T*)b)[i];}
+#define EXPR_SUB(T) {int i; for(i=0;i<N;++i)((T*)c)[i]=((T*)a)[i]-((T*)b)[i];}
+#define EXPR_MUL(T) {int i; for(i=0;i<N;++i)((T*)c)[i]=((T*)a)[i]*((T*)b)[i];}
+#define EXPR_DIV(T) {int i; for(i=0;i<N;++i)((T*)c)[i]=((T*)a)[i]/((T*)b)[i];}
+#define EXPR_POW(T) {int i; for(i=0;i<N;++i)((T*)c)[i]= pow(((T*)a)[i],((T*)b)[i]);}
+#define EXPR_COW(T) {int i; for(i=0;i<N;++i)((T*)c)[i]=cpow(((T*)a)[i],((T*)b)[i]);}
 
-#define EXPR_ASSIGN0(T,val) {for(int i=0;i<N;++i)((T*)a)[i]=val;}
-#define EXPR_ASSIGN1(T,val) {for(int i=0;i<N;++i)((T*)a)[i]=*((T*)val);}
-#define EXPR_ASSIGN2(Ta,Tb) {for(int i=0;i<N;++i)((Ta*)a)[i]=((Tb*)b)[i];}
+#define EXPR_ASSIGN0(T,val) {int i; for(i=0;i<N;++i)((T*)a)[i]=val;}
+#define EXPR_ASSIGN1(T,val) {int i; for(i=0;i<N;++i)((T*)a)[i]=*((T*)val);}
+#define EXPR_ASSIGN2(Ta,Tb) {int i; for(i=0;i<N;++i)((Ta*)a)[i]=((Tb*)b)[i];}
 
 
 
@@ -32,7 +30,6 @@ char *array_typename(enum ArrayType T)
   case ARRAY_TYPE_LONG    : return "long";
   case ARRAY_TYPE_FLOAT   : return "float";
   case ARRAY_TYPE_DOUBLE  : return "double";
-  case ARRAY_TYPE_COMPLEX : return "complex";
   }
   return NULL; // indicates invalid type
 }
@@ -47,7 +44,6 @@ enum ArrayType array_typeflag(char c)
   case 'l': return ARRAY_TYPE_LONG;
   case 'f': return ARRAY_TYPE_FLOAT;
   case 'd': return ARRAY_TYPE_DOUBLE;
-  case 'z': return ARRAY_TYPE_COMPLEX;
   }
   return -1; // indicates invalid type
 }
@@ -75,7 +71,6 @@ struct Array array_new_zeros(int N, enum ArrayType T)
   case ARRAY_TYPE_LONG    : EXPR_ASSIGN0(long   ,0) ; break;
   case ARRAY_TYPE_FLOAT   : EXPR_ASSIGN0(float  ,0) ; break;
   case ARRAY_TYPE_DOUBLE  : EXPR_ASSIGN0(double ,0) ; break;
-  case ARRAY_TYPE_COMPLEX : EXPR_ASSIGN0(Complex,0) ; break;
   }
 
   return A;
@@ -101,8 +96,8 @@ void array_del(struct Array *A)
 
 int array_resize(struct Array *A, const int *N, int Nd)
 {
-  int ntot = 1;
-  for (int d=0; d<Nd; ++d) ntot *= N[d];
+  int d, ntot = 1;
+  for (d=0; d<Nd; ++d) ntot *= N[d];
 
   if (A->size != ntot) {
     return 1;
@@ -134,7 +129,6 @@ void array_binary_op(const struct Array *A, const struct Array *B,
     case ARRAY_TYPE_LONG    : EXPR_ADD(long   ) ; break;
     case ARRAY_TYPE_FLOAT   : EXPR_ADD(float  ) ; break;
     case ARRAY_TYPE_DOUBLE  : EXPR_ADD(double ) ; break;
-    case ARRAY_TYPE_COMPLEX : EXPR_ADD(Complex) ; break;
     }
     break;
   case ARRAY_OP_SUB:
@@ -146,7 +140,6 @@ void array_binary_op(const struct Array *A, const struct Array *B,
     case ARRAY_TYPE_LONG    : EXPR_SUB(long   ) ; break;
     case ARRAY_TYPE_FLOAT   : EXPR_SUB(float  ) ; break;
     case ARRAY_TYPE_DOUBLE  : EXPR_SUB(double ) ; break;
-    case ARRAY_TYPE_COMPLEX : EXPR_SUB(Complex) ; break;
     }
     break;
   case ARRAY_OP_MUL:
@@ -158,7 +151,6 @@ void array_binary_op(const struct Array *A, const struct Array *B,
     case ARRAY_TYPE_LONG    : EXPR_MUL(long   ) ; break;
     case ARRAY_TYPE_FLOAT   : EXPR_MUL(float  ) ; break;
     case ARRAY_TYPE_DOUBLE  : EXPR_MUL(double ) ; break;
-    case ARRAY_TYPE_COMPLEX : EXPR_MUL(Complex) ; break;
     }
     break;
   case ARRAY_OP_DIV:
@@ -170,7 +162,6 @@ void array_binary_op(const struct Array *A, const struct Array *B,
     case ARRAY_TYPE_LONG    : EXPR_DIV(long   ) ; break;
     case ARRAY_TYPE_FLOAT   : EXPR_DIV(float  ) ; break;
     case ARRAY_TYPE_DOUBLE  : EXPR_DIV(double ) ; break;
-    case ARRAY_TYPE_COMPLEX : EXPR_DIV(Complex) ; break;
     }
     break;
   case ARRAY_OP_POW:
@@ -182,7 +173,6 @@ void array_binary_op(const struct Array *A, const struct Array *B,
     case ARRAY_TYPE_LONG    : EXPR_POW(long   ) ; break;
     case ARRAY_TYPE_FLOAT   : EXPR_POW(float  ) ; break;
     case ARRAY_TYPE_DOUBLE  : EXPR_POW(double ) ; break;
-    case ARRAY_TYPE_COMPLEX : EXPR_COW(Complex) ; break;
     }
     break;
   }
@@ -198,7 +188,6 @@ int array_sizeof(enum ArrayType T)
   case ARRAY_TYPE_LONG    : return sizeof(long);
   case ARRAY_TYPE_FLOAT   : return sizeof(float);
   case ARRAY_TYPE_DOUBLE  : return sizeof(double);
-  case ARRAY_TYPE_COMPLEX : return sizeof(Complex);
   }
   return sizeof(int);
 }
@@ -216,7 +205,6 @@ void array_assign_from_scalar(struct Array *A, const void *val)
   case ARRAY_TYPE_LONG    : EXPR_ASSIGN1(long   , val) ; break;
   case ARRAY_TYPE_FLOAT   : EXPR_ASSIGN1(float  , val) ; break;
   case ARRAY_TYPE_DOUBLE  : EXPR_ASSIGN1(double , val) ; break;
-  case ARRAY_TYPE_COMPLEX : EXPR_ASSIGN1(Complex, val) ; break;
   }
 }
 
@@ -237,7 +225,6 @@ void array_assign_from_array(struct Array *A, const struct Array *B)
     case ARRAY_TYPE_LONG    : EXPR_ASSIGN2(Bool, long)    ; break;
     case ARRAY_TYPE_FLOAT   : EXPR_ASSIGN2(Bool, float)   ; break;
     case ARRAY_TYPE_DOUBLE  : EXPR_ASSIGN2(Bool, double)  ; break;
-    case ARRAY_TYPE_COMPLEX : EXPR_ASSIGN2(Bool, Complex) ; break;
     }
     break;
 
@@ -250,7 +237,6 @@ void array_assign_from_array(struct Array *A, const struct Array *B)
     case ARRAY_TYPE_LONG    : EXPR_ASSIGN2(char, long)    ; break;
     case ARRAY_TYPE_FLOAT   : EXPR_ASSIGN2(char, float)   ; break;
     case ARRAY_TYPE_DOUBLE  : EXPR_ASSIGN2(char, double)  ; break;
-    case ARRAY_TYPE_COMPLEX : EXPR_ASSIGN2(char, Complex) ; break;
     }
     break;
 
@@ -263,7 +249,6 @@ void array_assign_from_array(struct Array *A, const struct Array *B)
     case ARRAY_TYPE_LONG    : EXPR_ASSIGN2(short, long)    ; break;
     case ARRAY_TYPE_FLOAT   : EXPR_ASSIGN2(short, float)   ; break;
     case ARRAY_TYPE_DOUBLE  : EXPR_ASSIGN2(short, double)  ; break;
-    case ARRAY_TYPE_COMPLEX : EXPR_ASSIGN2(short, Complex) ; break;
     }
     break;
 
@@ -276,7 +261,6 @@ void array_assign_from_array(struct Array *A, const struct Array *B)
     case ARRAY_TYPE_LONG    : EXPR_ASSIGN2(int, long)    ; break;
     case ARRAY_TYPE_FLOAT   : EXPR_ASSIGN2(int, float)   ; break;
     case ARRAY_TYPE_DOUBLE  : EXPR_ASSIGN2(int, double)  ; break;
-    case ARRAY_TYPE_COMPLEX : EXPR_ASSIGN2(int, Complex) ; break;
     }
     break;
 
@@ -289,7 +273,6 @@ void array_assign_from_array(struct Array *A, const struct Array *B)
     case ARRAY_TYPE_LONG    : EXPR_ASSIGN2(long, long)    ; break;
     case ARRAY_TYPE_FLOAT   : EXPR_ASSIGN2(long, float)   ; break;
     case ARRAY_TYPE_DOUBLE  : EXPR_ASSIGN2(long, double)  ; break;
-    case ARRAY_TYPE_COMPLEX : EXPR_ASSIGN2(long, Complex) ; break;
     }
     break;
 
@@ -302,7 +285,6 @@ void array_assign_from_array(struct Array *A, const struct Array *B)
     case ARRAY_TYPE_LONG    : EXPR_ASSIGN2(float, long)    ; break;
     case ARRAY_TYPE_FLOAT   : EXPR_ASSIGN2(float, float)   ; break;
     case ARRAY_TYPE_DOUBLE  : EXPR_ASSIGN2(float, double)  ; break;
-    case ARRAY_TYPE_COMPLEX : EXPR_ASSIGN2(float, Complex) ; break;
     }
     break;
 
@@ -315,22 +297,9 @@ void array_assign_from_array(struct Array *A, const struct Array *B)
     case ARRAY_TYPE_LONG    : EXPR_ASSIGN2(double, long)    ; break;
     case ARRAY_TYPE_FLOAT   : EXPR_ASSIGN2(double, float)   ; break;
     case ARRAY_TYPE_DOUBLE  : EXPR_ASSIGN2(double, double)  ; break;
-    case ARRAY_TYPE_COMPLEX : EXPR_ASSIGN2(double, Complex) ; break;
     }
     break;
 
-  case ARRAY_TYPE_COMPLEX:
-    switch (B->dtype) {
-    case ARRAY_TYPE_BOOL    : EXPR_ASSIGN2(Complex, Bool)    ; break;
-    case ARRAY_TYPE_CHAR    : EXPR_ASSIGN2(Complex, char)    ; break;
-    case ARRAY_TYPE_SHORT   : EXPR_ASSIGN2(Complex, short)   ; break;
-    case ARRAY_TYPE_INT     : EXPR_ASSIGN2(Complex, int)     ; break;
-    case ARRAY_TYPE_LONG    : EXPR_ASSIGN2(Complex, long)    ; break;
-    case ARRAY_TYPE_FLOAT   : EXPR_ASSIGN2(Complex, float)   ; break;
-    case ARRAY_TYPE_DOUBLE  : EXPR_ASSIGN2(Complex, double)  ; break;
-    case ARRAY_TYPE_COMPLEX : EXPR_ASSIGN2(Complex, Complex) ; break;
-    }
-    break;
   }
 }
 
@@ -350,16 +319,16 @@ struct Array array_new_from_slice(const struct Array *B1,
   int *N = (int*) malloc(Nd*sizeof(int)); // number of elements to select
   int *S = (int*) malloc(Nd*sizeof(int)); // strides (in memory) along each axis
 
-  int ntot = 1;
+  int d, ntot = 1;
 
-  for (int d=0; d<Nd; ++d) {
+  for (d=0; d<Nd; ++d) {
     J[d] = 0;
     N[d] = 1 + (stop[d] - start[d] - 1) / skip[d];
     ntot *= N[d];
   }
 
   S[Nd-1] = 1;
-  for (int d=Nd-2; d>=0; --d) S[d] = S[d+1] * B1->shape[d+1];
+  for (d=Nd-2; d>=0; --d) S[d] = S[d+1] * B1->shape[d+1];
 
 
   struct Array B0 = array_new_zeros(ntot, B1->dtype);
@@ -375,14 +344,14 @@ struct Array array_new_from_slice(const struct Array *B1,
   while (J[0] < N[0]) {
 
     int M = 0;
-    for (int d=0; d<Nd; ++d) M += (J[d] * skip[d] + start[d]) * S[d];
+    for (d=0; d<Nd; ++d) M += (J[d] * skip[d] + start[d]) * S[d];
 
     // ----- use the indices m,M -----
     memcpy(b0 + (m++)*sizeof_T, b1 + M*sizeof_T, sizeof_T);
     // -----                 -----
 
     ++J[Nd-1];
-    for (int d=Nd-1; d!=0; --d) {
+    for (d=Nd-1; d!=0; --d) {
       if (J[d] == N[d]) {
 	J[d] = 0;
 	++J[d-1];
@@ -409,9 +378,9 @@ struct Array array_new_from_mask(const struct Array *B1, struct Array *M)
   char *b0 = (char*) malloc(sizeof_T);
   char *b1 = (char*) B1->data;
 
-  int m = 0;
+  int n, m = 0;
 
-  for (int n=0; n<B1->size; ++n) {
+  for (n=0; n<B1->size; ++n) {
     if (((Bool*)M->data)[n]) {
       b0 = (char*) realloc(b0, (++m)*sizeof(double));
       memcpy(b0 + (m-1)*sizeof_T, b1 + n*sizeof_T, sizeof_T);
