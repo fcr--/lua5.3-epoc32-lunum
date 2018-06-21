@@ -3,10 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <complex.h>
 
 typedef unsigned char Bool;
-typedef double complex Complex;
 
 
 enum ArrayType {
@@ -17,7 +15,6 @@ enum ArrayType {
   ARRAY_TYPE_LONG,
   ARRAY_TYPE_FLOAT,
   ARRAY_TYPE_DOUBLE,
-  ARRAY_TYPE_COMPLEX,
 };
 
 struct Buffer {
@@ -36,7 +33,6 @@ int buffer_sizeof(enum ArrayType T)
   case ARRAY_TYPE_LONG    : return sizeof(long);
   case ARRAY_TYPE_FLOAT   : return sizeof(float);
   case ARRAY_TYPE_DOUBLE  : return sizeof(double);
-  case ARRAY_TYPE_COMPLEX : return sizeof(Complex);
   }
 }
 

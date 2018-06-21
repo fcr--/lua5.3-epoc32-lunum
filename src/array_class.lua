@@ -1,4 +1,4 @@
-
+local unpack = _G.unpack or table.unpack
 
 -- *****************************************************************************
 -- Local utility function, never exported

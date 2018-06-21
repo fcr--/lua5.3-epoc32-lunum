@@ -1,6 +1,6 @@
 
 
-LUA ?= lua
+LUA ?= lua5.3
 
 default : $(LUNUM_A) $(LUNUM_SO)
 
@@ -23,7 +23,7 @@ $(LUNUM_SO) : numarray.o lunum.o lunum_capi.o array_class.o lunum_epoc32.o lunum
 	$(SO) -o $(LUNUM_SO) $^ $(CLIBS)
 
 array_class.lc : array_class.lua
-	$(LUA) bin2c.lua +$< > $@
+	$(LUA) bin2c.lua $< > $@
 
 clean :
 	rm -f *.o $(LUNUM_A) $(LUNUM_SO) *.lc
